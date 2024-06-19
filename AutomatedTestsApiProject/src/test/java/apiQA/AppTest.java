@@ -39,12 +39,13 @@ public class AppTest {
     }
 
     @Test
-    public void buscaProdutosCadastradosFakerGPT() {
+    public void buscarAcoesFaker() {
 //Gerar valores dinâmicos para cadastrar ação
         Faker faker = new Faker();
         String fakeName = faker.company().name();
         float fakePrice = faker.number().randomNumber(2, true);
         String fakeSymbol = faker.regexify("[A-Z]{4}[0-9]{1,2}");
+
 //Cadastrar ação
         String json = "{\n" +
         "    \"Name\": \""+fakeName+"\",\n" +
@@ -103,6 +104,45 @@ public class AppTest {
                 body("Message", Matchers.equalTo("new stock created"));
         }
 
+        @Test
+        public void cadastrarAcaoFaker() {
+            Faker faker = new Faker();
+            String fakeName = faker.company().name();
+            float fakePrice = faker.number().randomNumber(2, true);
+            String fakeSymbol = faker.regexify("[A-Z]{4} [0-9]{1,2} ");
+           
+            String json = "{\n" +
+                  "    \"Name\": \""+fakeName+"\",\n" +
+                  "    \"Symbol\": \""+fakeSymbol+"\", \n"+
+                  "    \"Price\": "+fakePrice+"\n" +
+                  "}";
+            
+            RestAssured.baseURI = "http://127.0.0.1:5000";
+            //Cadastrar ação
+            given().
+                contentType(ContentType.JSON).
+                body(json).
+                log().all().
+            when().
+                post("new/stock/").
+            then().
+                assertThat().
+                    statusCode(201).
+                    log().all().
+                    body("Message", Matchers.equalTo("new stock created")); //fazer uma chamada get pra entender se a ação realmente foi criada
+            //Verificar ação cadastrada
+             given().
+                contentType(ContentType.JSON).
+            when().
+                get("stock/"+fakeSymbol+"/").
+            then().
+                assertThat().
+                        statusCode(200).
+                        log().all().
+                        body("Message", Matchers.equalTo("there are a stock with symbol "+fakeSymbol+" in database")).
+                        body("Content.Stock[0].Name", Matchers.equalTo(fakeName));    
+            }  
+
      
     @Test
     public void procurarAcoes() {
@@ -120,7 +160,29 @@ public class AppTest {
                         log().all().
                         body("Message", Matchers.equalTo("there are a stock with symbol ITIU01042 in database")).
                         body("Content.Stock[0].Name", Matchers.equalTo("ITI BANCO DIGITAL 43"));
-     }        
+     }  
+     
+     @Test
+     public void procurarAcoesFaker() {
+         String fakeName;
+         String fakeSymbol;
+         fakeSymbol = "ITIU01042";
+         fakeName = "ITI BANCO DIGITAL 43";
+
+         System.out.println("oi teste 3");
+         RestAssured.baseURI = "http://127.0.0.1:5000";
+ 
+             given().
+                 contentType(ContentType.JSON).
+             when().
+                 get("stock/"+fakeSymbol+"/").
+             then().
+                 assertThat().
+                         statusCode(200).
+                         log().all().
+                         body("Message", Matchers.equalTo("there are a stock with symbol "+fakeSymbol+" in database")).
+                         body("Content.Stock[0].Name", Matchers.equalTo(fakeName));
+      } 
     
     @Test
     public void cadastraracaoDuplicada() {
